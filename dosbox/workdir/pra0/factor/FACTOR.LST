@@ -1,0 +1,149 @@
+Turbo Assembler	 Version 2.0	    03/04/21 20:53:15	    Page 1
+factor.asm
+
+
+
+      1				     ;*******************************************************************************
+      2				     ; CALCULA EL PRODUCTO DEL FACTORIAL DE DOS	NUMEROS	QUE SE
+      3				     ; ENCUENTRAN EN LAS POSICIONES DE MEMORIA 0 Y 1 DEL SEGMENTO DE
+      4				     ; DATOS. EL VALOR DE CADA NUMERO DEBE SER INFERIOR	A 9. EL	RESULTADO
+      5				     ; SE ALMACENA EN DOS PALABRAS DEL SEGMENTO	EXTRA, EN LA PRIMERA
+      6				     ; PALABRA EL MENOS	SIGNIFICATIVO Y	EN LA SEGUNDA EL MAS
+      7				     ; SIGNIFICATIVO. SE UTILIZA UNA RUTINA PARA CALCULAR EL FACTORIAL.
+      8				     ;*******************************************************************************
+      9
+     10				     ; DEFINICION DEL SEGMENTO DE DATOS
+     11
+     12	0000			     DATOS SEGMENT
+     13
+     14	0000  0005		     DATO_1  DW	    5
+     15	0002  0002		     DATO_2  DW	    2
+     16
+     17	0004			     DATOS ENDS
+     18
+     19
+     20				     ; DEFINICION DEL SEGMENTO DE PILA
+     21
+     22	0000			     PILA    SEGMENT STACK "STACK"
+     23	0000  40*(00)			 DB   40H DUP (0)
+     24	0040			     PILA ENDS
+     25
+     26
+     27				     ; DEFINICION DEL SEGMENTO EXTRA
+     28
+     29	0000			     EXTRA     SEGMENT
+     30	0000  0000 0000			 RESULT	   DW 0,0		  ; 2 PALABRAS ( 4 BYTES )
+     31	0004			     EXTRA ENDS
+     32
+     33
+     34				     ; DEFINICION DEL SEGMENTO DE CODIGO
+     35
+     36	0000			     CODE    SEGMENT
+     37					 ASSUME	CS:CODE, DS:DATOS, ES: EXTRA, SS:PILA
+     38
+     39	0000  0000		     FACT_DATO_1  DW	   0
+     40	0002  0000		     FACT_DATO_1_DX  DW	   0
+     41
+     42				     ; COMIENZO	DEL PROCEDIMIENTO PRINCIPAL
+     43
+     44	0004			     START PROC
+     45					 ;INICIALIZA LOS REGISTROS DE SEGMENTO CON SUS VALORES
+     46	0004  B8 0000s			 MOV AX, DATOS
+     47	0007  8E D8			 MOV DS, AX
+     48
+     49	0009  B8 0000s			 MOV AX, PILA
+     50	000C  8E D0			 MOV SS, AX
+     51
+     52	000E  B8 0000s			 MOV AX, EXTRA
+     53	0011  8E C0			 MOV ES, AX
+     54
+     55					 ; CARGA EL PUNTERO DE PILA CON	EL VALOR MAS ALTO
+     56	0013  BC 0040			 MOV SP, 64
+     57
+Turbo Assembler	 Version 2.0	    03/04/21 20:53:15	    Page 2
+factor.asm
+
+
+
+     58					 ; FIN DE LAS INICIALIZACIONES
+     59
+     60					 ;COMIENZO DEL PROGRAMA
+     61	0016  A1 0000r			 MOV AX, DATO_1
+     62	0019  8B 1E 0002r		 MOV BX, DATO_2
+     63	001D  F7 E3			 MUL BX
+     64	001F  8B C8			 MOV CX, AX
+     65	0021  E8 000E			 CALL FACTOR
+     66
+     67					 ; ALMACENA EL RESULTADO
+     68	0024  26: A3 0000r		 MOV RESULT, AX
+     69	0028  26: 89 16	0002r		 MOV RESULT+2, DX
+     70
+     71					 ; FIN DEL PROGRAMA
+     72	002D  B8 4C00			 MOV AX, 4C00H
+     73	0030  CD 21			 INT 21H
+     74
+     75	0032			     START ENDP
+     76				     ;_______________________________________________________________
+     77				     ; SUBRUTINA PARA CALCULAR EL FACTORIAL DE UN NUMERO
+     78				     ; ENTRADA CL=NUMERO
+     79				     ; SALIDA AX=RESULTADO, DX=0 YA QUE	CL<=9
+     80				     ;_______________________________________________________________
+     81
+     82	0032			     FACTOR PROC NEAR
+     83	0032  B8 0001			 MOV AX, 1
+     84	0035  32 ED			 XOR CH,CH
+     85	0037  83 F9 00			 CMP CX, 0
+     86	003A  74 15			 JE FIN
+     87	003C			     IR:
+     88	003C  8B F2			 MOV SI, DX
+     89	003E  F7 E1			 MUL CX
+     90	0040  8B D8			 MOV BX, AX	 ; guardamos en	BX AX*CX
+     91	0042  8B C6			 MOV AX, SI
+     92	0044  8B FA			 MOV DI, DX
+     93	0046  F7 E1			 MUL CX
+     94	0048  03 C7			 ADD AX, dI	 ; SI es DX antiguo
+     95	004A  8B D0			 MOV DX, AX
+     96	004C  8B C3			 MOV AX, BX
+     97	004E  49			 DEC CX
+     98	004F  75 EB			 JNE IR
+     99	0051			     FIN:
+    100	0051  C3			 RET
+    101	0052			     FACTOR ENDP
+    102
+    103				     ; FIN DEL SEGMENTO	DE CODIGO
+    104	0052			     CODE ENDS
+    105				     ; FIN DEL PROGRAMA	INDICANDO DONDE	COMIENZA LA EJECUCION
+    106				     END START
+Turbo Assembler	 Version 2.0	    03/04/21 20:53:15	    Page 3
+Symbol Table
+
+
+
+
+Symbol Name			  Type	 Value
+
+??DATE				  Text	 "03/04/21"
+??FILENAME			  Text	 "factor  "
+??TIME				  Text	 "20:53:15"
+??VERSION			  Number 0200
+@CPU				  Text	 0101H
+@CURSEG				  Text	 CODE
+@FILENAME			  Text	 FACTOR
+@WORDSIZE			  Text	 2
+DATO_1				  Word	 DATOS:0000
+DATO_2				  Word	 DATOS:0002
+FACTOR				  Near	 CODE:0032
+FACT_DATO_1			  Word	 CODE:0000
+FACT_DATO_1_DX			  Word	 CODE:0002
+FIN				  Near	 CODE:0051
+IR				  Near	 CODE:003C
+RESULT				  Word	 EXTRA:0000
+START				  Near	 CODE:0004
+
+Groups & Segments		  Bit Size Align  Combine Class
+
+CODE				  16  0052 Para	  none
+DATOS				  16  0004 Para	  none
+EXTRA				  16  0004 Para	  none
+PILA				  16  0040 Para	  Stack	  STACK
+

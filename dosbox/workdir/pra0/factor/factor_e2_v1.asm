@@ -11,8 +11,8 @@
 
 DATOS SEGMENT 
 
-DATO_1  DW     5
-DATO_2  DW     2
+DATO_1  DW     2
+DATO_2  DW     3
 
 DATOS ENDS 
 
@@ -37,7 +37,6 @@ CODE    SEGMENT
     ASSUME CS:CODE, DS:DATOS, ES: EXTRA, SS:PILA 
 
 FACT_DATO_1  DW       0 
-FACT_DATO_1_DX  DW    0
 
 ; COMIENZO DEL PROCEDIMIENTO PRINCIPAL 
 
@@ -62,7 +61,7 @@ START PROC
     MOV BX, DATO_2
     MUL BX
     MOV CX, AX
-    CALL FACTOR 
+    CALL FACTOR
 
     ; ALMACENA EL RESULTADO 
     MOV RESULT, AX 
@@ -85,15 +84,7 @@ FACTOR PROC NEAR
     CMP CX, 0 
     JE FIN 
 IR: 
-    MOV SI, DX
-    MUL CX
-    MOV BX, AX      ; guardamos en BX AX*CX
-    MOV AX, SI
-    MOV DI, DX
-    MUL CX
-    ADD AX, dI      ; SI es DX antiguo
-    MOV DX, AX      
-    MOV AX, BX
+    MUL CX 
     DEC CX 
     JNE IR 
 FIN: 
