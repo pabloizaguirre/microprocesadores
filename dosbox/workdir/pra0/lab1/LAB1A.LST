@@ -1,0 +1,123 @@
+Turbo Assembler	 Version 2.0	    03/11/21 20:07:27	    Page 1
+Lab1A.asm
+
+
+
+      1				     ;*******************************************************************************
+      2				     ; AUTHOR: PABLO IZAGUIRRE (PABLO.IZAGUIRRE@ESTUDIANTE.UAM.ES)
+      3				     ;
+      4				     ; THIS CODE PERFORMS A SERIES OF OPERATIONS MOVING	DATA FROM THE REGISTERS
+      5				     ; TO THE MEMORY AND VICEVERSA
+      6				     ;*******************************************************************************
+      7
+      8				     ; DEFINICION DEL SEGMENTO DE DATOS
+      9
+     10	0000			     DATOS SEGMENT
+     11
+     12	0000			     DATOS ENDS
+     13
+     14				     ; DEFINICION DEL SEGMENTO DE PILA
+     15
+     16	0000			     PILA    SEGMENT STACK "STACK"
+     17	0000  40*(00)			 DB   40H DUP (0)
+     18	0040			     PILA ENDS
+     19
+     20
+     21				     ; DEFINICION DEL SEGMENTO EXTRA
+     22
+     23	0000			     EXTRA     SEGMENT
+     24	0000  0000 0000			 RESULT	   DW 0,0		  ; 2 PALABRAS ( 4 BYTES )
+     25	0004			     EXTRA ENDS
+     26
+     27
+     28				     ; DEFINICION DEL SEGMENTO DE CODIGO
+     29
+     30	0000			     CODE    SEGMENT
+     31					 ASSUME	CS:CODE, DS:DATOS, ES: EXTRA, SS:PILA
+     32
+     33	0000  0000		     FACT_DATO_1  DW	   0
+     34	0002  0000		     FACT_DATO_1_DX  DW	   0
+     35
+     36				     ; COMIENZO	DEL PROCEDIMIENTO PRINCIPAL
+     37
+     38	0004			     START PROC
+     39					 ;INICIALIZA LOS REGISTROS DE SEGMENTO CON SUS VALORES
+     40	0004  B8 0000s			 MOV AX, DATOS
+     41	0007  8E D8			 MOV DS, AX
+     42
+     43	0009  B8 0000s			 MOV AX, PILA
+     44	000C  8E D0			 MOV SS, AX
+     45
+     46	000E  B8 0000s			 MOV AX, EXTRA
+     47	0011  8E C0			 MOV ES, AX
+     48
+     49					 ; CARGA EL PUNTERO DE PILA CON	EL VALOR MAS ALTO
+     50	0013  BC 0040			 MOV SP, 64
+     51
+     52					 ; FIN DE LAS INICIALIZACIONES
+     53
+     54	0016  B8 009B			 MOV AX, 9BH
+     55
+     56	0019  B3 B2			 MOV BL, 0B2H
+     57
+Turbo Assembler	 Version 2.0	    03/11/21 20:07:27	    Page 2
+Lab1A.asm
+
+
+
+     58	001B  B9 3412			 MOV CX, 3412H
+     59
+     60	001E  B8 0049			 MOV AX, 01001001b
+     61	0021  8E D8			 MOV DS, AX
+     62
+     63	0023  8B D1			 MOV DX, CX
+     64
+     65	0025  B8 5000			 MOV AX, 5000H
+     66	0028  8E D8			 MOV DS, AX
+     67	002A  8B 1E 5235		 MOV BX, DS:[5235H]
+     68
+     69	002E  B8 7000			 MOV AX, 7000H
+     70	0031  8E D8			 MOV DS, AX
+     71	0033  88 2E 0008		 MOV DS:[8H], CH
+     72
+     73	0037  8B 04			 MOV AX, [SI]
+     74
+     75	0039  8B 5E 0A			 MOV BX, [BP+10]
+     76
+     77					 ; FIN DEL PROGRAMA
+     78	003C  B8 4C00			 MOV AX, 4C00H
+     79	003F  CD 21			 INT 21H
+     80
+     81	0041			     START ENDP
+     82
+     83	0041			     CODE ENDS
+     84
+     85				     END START
+Turbo Assembler	 Version 2.0	    03/11/21 20:07:27	    Page 3
+Symbol Table
+
+
+
+
+Symbol Name			  Type	 Value
+
+??DATE				  Text	 "03/11/21"
+??FILENAME			  Text	 "Lab1A	  "
+??TIME				  Text	 "20:07:27"
+??VERSION			  Number 0200
+@CPU				  Text	 0101H
+@CURSEG				  Text	 CODE
+@FILENAME			  Text	 LAB1A
+@WORDSIZE			  Text	 2
+FACT_DATO_1			  Word	 CODE:0000
+FACT_DATO_1_DX			  Word	 CODE:0002
+RESULT				  Word	 EXTRA:0000
+START				  Near	 CODE:0004
+
+Groups & Segments		  Bit Size Align  Combine Class
+
+CODE				  16  0041 Para	  none
+DATOS				  16  0000 Para	  none
+EXTRA				  16  0004 Para	  none
+PILA				  16  0040 Para	  Stack	  STACK
+

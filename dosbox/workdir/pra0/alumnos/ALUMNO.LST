@@ -1,0 +1,229 @@
+Turbo Assembler	 Version 2.0	    03/07/21 20:04:03	    Page 1
+alumno.asm
+
+
+
+      1				     ;*******************************************************************************
+      2				     ; AUTHOR: PABLO IZAGUIRRE (PABLO.IZAGUIRRE@ESTUDIANTE.UAM.ES)
+      3				     ;
+      4				     ; THIS CODE ASKS FOR A NAME, A SURNAME AND	A COUNTRY AND PRNTS ON THE SCREEN
+      5				     ; A TEXT THAT INCLUDES THIS INFORMATION.
+      6				     ;*******************************************************************************
+      7
+      8				     ;_______________________________________________________________
+      9				     ; DEFINICION DEL SEGMENTO DE DATOS
+     10	0000			     DATOS SEGMENT
+     11	0000  1B 5B 32 4A 24		     CLR_PANT	     DB	     1BH,"[2","J$"
+     12	0005  1B 5B 34 3B 32 37	66+	     CUR_MICRO	     DB	     1BH,"[4;27fTECNOLOGIA DE COMPUTADORES$"	     ; I ADDED THE  +
+     13	      54 45 43 4E 4F 4C	4F+  CHARACTER [ SO THAT THE ANSII SCAPE CODE FUNCTIONS	PROPERLY
+     14	      47 49 41 20 44 45	20+
+     15	      43 4F 4D 50 55 54	41+
+     16	      44 4F 52 45 53 24
+     17	0027  1B 5B 31 30 3B 31	66+	     PREG_NOM	     DB	     1BH,"[10;1fWRITE YOUR NAME	? $"
+     18	      57 52 49 54 45 20	59+
+     19	      4F 55 52 20 4E 41	4D+
+     20	      45 20 3F 20 24
+     21	0041  1B 5B 31 32 3B 31	66+	     PREG_AP	     DB	     1BH,"[12;1fWRITE YOUR SURNAME ? $"			     ; I    +
+     22	      57 52 49 54 45 20	59+  ADDED AN ANSII CODE TO CHANGE THE POSITION	OF THE CURSOR TO TWO LINES BELOW
+     23	      4F 55 52 20 53 55	52+
+     24	      4E 41 4D 45 20 3F	20+
+     25	      24
+     26	005E  1B 5B 31 34 3B 31	66+	     PREG_PAIS	     DB	     1BH,"[14;1fWRITE YOUR COUNTRY ? $"			     ; I    +
+     27	      57 52 49 54 45 20	59+  ADDED AN ANSII CODE TO CHANGE THE POSITION	OF THE CURSOR TO TWO LINES BELOW AGAIN
+     28	      4F 55 52 20 43 4F	55+
+     29	      4E 54 52 59 20 3F	20+
+     30	      24
+     31	007B  50*(00)			     NOMBRE	     DB	     80	DUP (0)
+     32	00CB  50*(00)			     APELLIDO	     DB	     80	DUP (0)							    +
+     33				     ; WE RESERVE 80 BYTES INITIALIZED TO 0
+     34	011B  50*(00)			     PAIS	     DB	     80	DUP (0)
+     35	016B  1B 5B 32 32 3B 31	66+	     TEXTO	     DB	     1BH,"[22;1f","$"
+     36	      24
+     37	0173  20 28 46 52 4F 4D	20+	     TEXTO2	     DB	     " (FROM ",	"$"
+     38	      24
+     39	017B  29 20 49 53 20 43	4F+	     TEXTO3	     DB	     ")	IS COURSING SECOND COURSE OF "
+     40	      55 52 53 49 4E 47	20+
+     41	      53 45 43 4F 4E 44	20+
+     42	      43 4F 55 52 53 45	20+
+     43	      4F 46 20
+     44	019A  43 4F 4D 50 55 54	45+			     DB	     "COMPUTER SCIENCE",13,10,"$"				    +
+     45	      52 20 53 43 49 45	4E+  ;13 es /r,	10 es /n
+     46	      43 45 0D 0A 24
+     47	01AD  20 24			     TXTSPACE	     DB	     " ", "$"
+     48	01AF			     DATOS ENDS
+     49				     ;_______________________________________________________________
+     50				     ; DEFINICION DEL SEGMENTO DE PILA
+     51	0000			     PILA SEGMENT STACK	"STACK"
+     52	0000  40*(00)			     DB	40H DUP	(0)
+     53	0040			     PILA ENDS
+     54				     ;_______________________________________________________________
+     55				     ; DEFINICION DEL SEGMENTO DE CODIGO
+     56	0000			     CODE SEGMENT
+     57				     ASSUME CS:CODE,DS:DATOS,SS:PILA
+Turbo Assembler	 Version 2.0	    03/07/21 20:04:03	    Page 2
+alumno.asm
+
+
+
+     58				     ; COMIENZO	DEL PROCEDIMIENTO PRINCIPAL (START)
+     59	0000			     START PROC	FAR
+     60				     ;INICIALIZACION DE	LOS REGISTROS DE SEGMENTO
+     61	0000  B8 0000s			     MOV AX,DATOS
+     62	0003  8E D8			     MOV DS,AX	     ;FIN DE LAS INICIALIZACIONES
+     63
+     64	0005  B4 09			     MOV AH,9	     ; BORRA LA	PANTALLA
+     65	0007  BA 0000r			     MOV DX, OFFSET CLR_PANT
+     66	000A  CD 21			     INT 21H
+     67
+     68	000C  BA 0005r			     MOV DX,OFFSET CUR_MICRO	     ;ESCRIBE "CURSO ...
+     69	000F  CD 21			     INT 21H
+     70
+     71					     ; OBTAIN THE NAME:
+     72	0011  BA 0027r			     MOV DX,OFFSET PREG_NOM	     ;PRINTS THE REQUEST FOR THE NAME
+     73	0014  CD 21			     INT 21H
+     74
+     75	0016  B4 0A			     MOV AH,0AH					     ;FUNCTION THAT STORES THE WRITEN STRING
+     76	0018  BA 007Br			     MOV DX,OFFSET NOMBRE	     ;DX CONTAINS THE MEMORY POSITION WHERE THE	WRITEN DATA +
+     77				     MUST BE STORED
+     78
+     79	001B  C6 06 007Br 3C		     MOV NOMBRE[0],60			     ;THE MAXIMUM AMMOUNT OF CHARACTERS	MUST BE	    +
+     80				     STORED IN THE FIRST BYTE
+     81	0020  CD 21			     INT 21H
+     82
+     83					     ; OBTAIN THE SURNAME:
+     84	0022  B4 09			     MOV AH,9					     ;FUNCTION THAT ALLOWS TO PRINT A STRING
+     85	0024  BA 0041r			     MOV DX,OFFSET PREG_AP	     ;PRINTS THE REQUEST FOR THE SURNAME
+     86	0027  CD 21			     INT 21H
+     87
+     88	0029  B4 0A			     MOV AH,0AH
+     89	002B  BA 00CBr			     MOV DX, OFFSET APELLIDO	     ;DX CONTAINS THE MEMORY POSITION WHERE THE	SURNAME	HAS +
+     90				     TO	BE STORED
+     91
+     92	002E  C6 06 00CBr 3C		     MOV APELLIDO[0], 60		     ;THE SURNAME HAS TO HAVE LESS THAN	60 CHARACTERS
+     93	0033  CD 21			     INT 21H					     ;WE CALL THE SOFTWARE INTERRUPTION	21H +
+     94				     AND THE FUNCTION 0AH IS EXECUTED, WHICH
+     95												     ;READS A LINE FROM	THE KEYBOARD+
+     96				     AND STORES	IT IN THE MEMORY POSITION WHERE	DX POINTS
+     97												     ;TO. THE LENGTH OF	THE WRITTEN +
+     98				     STRING WILL BE STORED IN THE SECOND BYTE
+     99
+    100					     ; OBTAIN THE COUNTRY:
+    101	0035  B4 09			     MOV AH,9
+    102	0037  BA 005Er			     MOV DX, OFFSET PREG_PAIS	     ;PRINTS THE REQUEST FOR THE COUNTRY
+    103	003A  CD 21			     INT 21H
+    104
+    105	003C  B4 0A			     MOV AH,0AH
+    106	003E  BA 011Br			     MOV DX, OFFSET PAIS		     ;DX CONTAINS THE MEMORY POSITION WHERE THE	    +
+    107				     COUNTRY MUST BE STORED
+    108
+    109	0041  C6 06 011Br 3C		     MOV PAIS[0], 60			     ;THE COUNTRY MUST HAVE LESS THAN 60 CHARACTERS
+    110	0046  CD 21			     INT 21H					     ;WE CALL THE SOFTWARE INTERRUPTION	21H
+    111
+    112					     ; WRITE THE RESULT
+    113	0048  B4 09			     MOV AH,9
+    114	004A  BA 016Br			     MOV DX, OFFSET TEXTO	     ;MOVES THE	CURSOR TO THE CORRECT POSITION
+Turbo Assembler	 Version 2.0	    03/07/21 20:04:03	    Page 3
+alumno.asm
+
+
+
+    115	004D  CD 21			     INT 21H
+    116
+    117	004F  BB 007Br			     MOV BX, OFFSET NOMBRE
+    118	0052  E8 0020			     CALL WRITE					     ;PRINTS THE NAME
+    119
+    120	0055  BA 01ADr			     MOV DX, OFFSET TXTSPACE	     ;PRINTS A SPACE
+    121	0058  CD 21			     INT 21H
+    122
+    123	005A  BB 00CBr			     MOV BX, OFFSET APELLIDO
+    124	005D  E8 0015			     CALL WRITE					     ;PRINTS THE SURNAME
+    125
+    126	0060  BA 0173r			     MOV DX, OFFSET TEXTO2	     ;PRINTS "(FROM "
+    127	0063  CD 21			     INT 21H
+    128
+    129	0065  BB 011Br			     MOV BX, OFFSET PAIS
+    130	0068  E8 000A			     CALL WRITE					     ;PRINTS THE COUNTRY
+    131
+    132	006B  BA 017Br			     MOV DX, OFFSET TEXTO3	     ;PRINTS ")	IS COURSING..."
+    133	006E  CD 21			     INT 21H
+    134
+    135
+    136	0070  B8 4C00			     MOV AX,4C00H		     ; FIN DE PROGRAMA Y VUELTA	AL DOS
+    137	0073  CD 21			     INT 21H
+    138	0075			      START ENDP
+    139
+    140				     ;_______________________________________________________________
+    141				     ; SUBRUTINA PARA ESCRIBIR POR PANTALLA UN TEXTO
+    142				     ; ENTRADA BX=POSICION EN MEMORIA DEL TEXTO
+    143				     ; ESTA FUNCION UTILIZA AH,	DX Y CL
+    144				     ;_______________________________________________________________
+    145
+    146	0075			     WRITE PROC	NEAR
+    147	0075  8B D3			     MOV DX, BX				     ; GUARDO EL VALOR INICIAL DE BX EN	DX
+    148	0077  83 C3 01			     ADD BX, 1				     ; BX APUNTA AHORA A DONDE ESTA GUARDADA EN	    +
+    149				     MEMORIA LA	LONGITUD DEL TEXTO
+    150	007A  8A 0F			     MOV CL, [BX]		     ; EN CL ESTA LA LONGITUD DEL TEXTO
+    151	007C  03 D9			     ADD BX, CX				     ; BX APUNTA A DONDE ESTA EN MEMORIA EL ULTIMO  +
+    152				     CARACTER DEL TEXTO
+    153	007E  83 C3 01			     ADD BX, 1
+    154	0081  C6 07 24			     MOV BYTE PTR [BX],	'$'  ; SE ESCRIBE DESPUES DEL ULTIMO CARACTER UN $ (QUE	EN ASCII ES +
+    155				     EL	36)
+    156											     ; USO BYTE	PTR PARA INDICAR QUE SOLO SE+
+    157				     QUIERE MOVER UN BYTE
+    158
+    159					     ; AHORA SE	ESCRIBE	EL TEXTO
+    160	0084  83 C2 02			     ADD DX, 2				     ; SE AVANZA DX HASTA LA POSICION DEL PRIMER    +
+    161				     CARACTER DEL TEXTO
+    162	0087  B4 09			     MOV AH,9				     ; ESTA OPERACION ESCRIBE UN STRING	TERMINADO EN+
+    163				     $ EN PANTALLA
+    164	0089  CD 21			     INT 21H				     ; SE LLAMA	A LA INTERRUPCION 21H
+    165	008B  C3			     RET
+    166
+    167	008C			     WRITE ENDP
+    168
+    169				     ;FIN DEL SEGMENTO DE CODIGO
+    170	008C			     CODE ENDS
+    171				     ;FIN DE PROGRAMA INDICANDO	DONDE COMIENZA LA EJECUCION
+Turbo Assembler	 Version 2.0	    03/07/21 20:04:03	    Page 4
+alumno.asm
+
+
+
+    172				     END START
+Turbo Assembler	 Version 2.0	    03/07/21 20:04:03	    Page 5
+Symbol Table
+
+
+
+
+Symbol Name			  Type	 Value
+
+??DATE				  Text	 "03/07/21"
+??FILENAME			  Text	 "alumno  "
+??TIME				  Text	 "20:04:03"
+??VERSION			  Number 0200
+@CPU				  Text	 0101H
+@CURSEG				  Text	 CODE
+@FILENAME			  Text	 ALUMNO
+@WORDSIZE			  Text	 2
+APELLIDO			  Byte	 DATOS:00CB
+CLR_PANT			  Byte	 DATOS:0000
+CUR_MICRO			  Byte	 DATOS:0005
+NOMBRE				  Byte	 DATOS:007B
+PAIS				  Byte	 DATOS:011B
+PREG_AP				  Byte	 DATOS:0041
+PREG_NOM			  Byte	 DATOS:0027
+PREG_PAIS			  Byte	 DATOS:005E
+START				  Far	 CODE:0000
+TEXTO				  Byte	 DATOS:016B
+TEXTO2				  Byte	 DATOS:0173
+TEXTO3				  Byte	 DATOS:017B
+TXTSPACE			  Byte	 DATOS:01AD
+WRITE				  Near	 CODE:0075
+
+Groups & Segments		  Bit Size Align  Combine Class
+
+CODE				  16  008C Para	  none
+DATOS				  16  01AF Para	  none
+PILA				  16  0040 Para	  Stack	  STACK
+
