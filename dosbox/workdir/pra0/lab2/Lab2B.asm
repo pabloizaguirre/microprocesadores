@@ -8,9 +8,9 @@
 ; DATA SEGMENT DEFINITION
 DATA SEGMENT
     ; VECTOR DEFINITION
-    vector1         DB 1,2,2,4
-    vector2         DB 4,5,1,1
-    vector3         DB 1,2,4,1
+    vector1         DB 1,2,0,4
+    vector2         DB 4,-2,2,1
+    vector3         DB 0,2,0,-1
     vectorAux       DB ?,?,?,?
     errorDuplicated     DB "Duplicated", 13, 10, '$'
     correctOutput   DB "Correct", 13, 10, '$'
@@ -55,7 +55,7 @@ IR2:
     ; DI INDICATES THE INDEX OF THE ELEMENTS INSIDE OF THE VECTOR WHERE WE STORE THE NUMBERS ALREADY USED
     MOV DI, SI
     ; WE STORE THE CURRENT NUMBER IN AH
-    MOV AH, vector[BX][SI]
+    MOV AH, vector1[BX][SI]
 CHECK_DUPES:
     DEC DI
     ; IF DI IS EQUAL TO -1, THEN THE AUXILIARY VECTOR HAS BEEN CHECKED COMPLETELY AND NO DUPLICATE HAS BEEN FOUND
