@@ -30,6 +30,7 @@ _TEXT SEGMENT BYTE PUBLIC 'CODE'
 	;******************
 
 	_drawPixel proc far
+		; we store the value of the registers that we will be changing
 		PUSH BP
 		MOV BP, SP
 		PUSH CX
@@ -75,20 +76,22 @@ _TEXT SEGMENT BYTE PUBLIC 'CODE'
 		mov al, MODO_VIDEO ; 
 		int 10h
 
-		;mov [BP + 2], 0
+		;we restore the value of the registers
 		POP BX
 		POP DX
 		POP CX
 		POP BP
+		; ax<-0 to indicate that the execution was correct
 		mov ax, 0
 		ret
 
 	DRAW_PIXEL_ERROR:
-		;mov [BP + 2], -1
+		; we restore the value of the registers
 		POP BX
 		POP DX
 		POP CX
 		POP BP
+		; ax<-1 to indicate that there was an error
 		MOV AX, -1
 		RET
 	_drawPixel endp
@@ -98,6 +101,8 @@ _TEXT SEGMENT BYTE PUBLIC 'CODE'
 	;******************
 
 	_drawSquare proc far
+		; we store the value of the registers that we will be changing during the 
+		; execution of this subroutine
 		PUSH BP
 		MOV BP, SP
 		PUSH BX
@@ -111,6 +116,7 @@ _TEXT SEGMENT BYTE PUBLIC 'CODE'
 		MOV DI, [BP + 8]	; DI <- SIZE
 		MOV BX, [BP + 6]	; BX <- COLOR
 
+		; we check that the input values are correct
 		CMP CX, 0
 		JL DRAW_SQUARE_ERROR
 		CMP DX, 0
@@ -127,7 +133,9 @@ _TEXT SEGMENT BYTE PUBLIC 'CODE'
 		JMP DRAW_SQUARE_CONTINUE
 
 	DRAW_SQUARE_ERROR:
+		; a -1 is stored in ax to indicate that the execution failed
 		MOV AX, -1
+		; we restore the value of the registers
 		POP SI
 		POP DI
 		POP DX
@@ -208,7 +216,9 @@ _TEXT SEGMENT BYTE PUBLIC 'CODE'
 		mov al, MODO_VIDEO ; 
 		int 10h
 
+		; we store 0 in ax to indicate that the execution was correct
 		MOV AX, 0
+		; we restore the value of the registers
 		POP SI
 		POP DI
 		POP DX
@@ -226,6 +236,7 @@ _TEXT SEGMENT BYTE PUBLIC 'CODE'
 	_drawPixelsList proc far
 		push bp
 		mov bp, sp
+		; we store the value of the registers we will be changing
 		push ds
 		push es
 		push sp
@@ -250,26 +261,21 @@ _TEXT SEGMENT BYTE PUBLIC 'CODE'
 		mov ah, 0bh
 		int 10h
 		
-		mov ds, [bp + 15]	; ds<-segment(pixellistx)
-		
-		;mov es, [bp + 19]	; es<-segment(pixellisty)
-		;mov di, [bp + 17]	; di<-offset(pixellisty)
-
-		;mov sp, [bp + 23]	; sp<-segment(pixellistColor)
+		mov ds, [bp + 16]	; ds<-segment(pixellistx)
 
 		mov si, 0
 		mov di, 0 
 
 	draw_pixels_list_ir:
-		mov bx, [bp + 13]	; bx<-offset(pixelistx)
+		mov bx, [bp + 14]	; bx<-offset(pixelistx)
 		mov cx, ds:[bx + di]
 		
-		mov es, [bp + 19]	; es<-segment(pixellisty)
-		mov bx, [bp + 17]	; bx<-offset(pixellisty)
+		mov es, [bp + 20]	; es<-segment(pixellisty)
+		mov bx, [bp + 18]	; bx<-offset(pixellisty)
 		mov dx, es:[bx + di]
 		
-		mov es, [bp + 23]	; es<-segment(pixellistColor)
-		mov bx, [bp + 21]	; ax<-segment(pixellistColor)
+		mov es, [bp + 24]	; es<-segment(pixellistColor)
+		mov bx, [bp + 22]	; ax<-segment(pixellistColor)
 		mov ax, es:[bx + si]
 
 		;Int10H draw pixel --> AH=0Ch 	AL = Colour, BH = PageNumber, CX = x, DX = y
@@ -279,13 +285,16 @@ _TEXT SEGMENT BYTE PUBLIC 'CODE'
 		mov bh, 00h ; page number (keep it always to zero)
 		int 10h
 
+		
 		inc si
+		; the elements of the pixelllistcolor are 2 bytes, so for each element we have to increase di by 2
 		add di, 2
-		cmp si, [bp + 6]
+		cmp si, [bp + 6]		; if we have reached the number of pixels, we stop printing
 		jl draw_pixels_list_ir
 
-		mov cx, [bp + 11]
-		mov dx, [bp + 9]
+		; we get the waiting time from the stack
+		mov cx, [bp + 12]
+		mov dx, [bp + 10]
 
 		;Int15H active waiting in milliseconds: 1 millon us = 1 segundo
 		MOV     AH, 86H ;int15h with AH=86h to microseconds waiting in CX:DX
@@ -295,7 +304,7 @@ _TEXT SEGMENT BYTE PUBLIC 'CODE'
 		mov al, MODO_VIDEO ; 
 		int 10h
 
-		mov ax, 0
+		; we restore the value of the registers
 		pop dx
 		pop cx
 		pop si
