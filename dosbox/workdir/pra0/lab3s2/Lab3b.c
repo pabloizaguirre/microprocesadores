@@ -1,11 +1,10 @@
 /*********************************************************************
- * pract3a.c
+ * pract3b.c
  *
  * Microprocessor-Based Systems
  * 2020-2021
- * Laboratory Assignment 3
- * Painting geometrical figures
- * ddga
+ * Laboratory Assignment 3s2
+ * Find substring and contro digit
  *
  *********************************************************************/
  
@@ -36,6 +35,19 @@
 ******************************************************************************/
 int findSubString(char *str, char *substr);
 
+/*******************************************************************************
+* Name: calculateSecondDC
+* 
+* Aim: returns the second control digit of a bank account from a 10 digits bank account number given
+* as an ASCII string.
+*
+* Inputs parameters:
+* 				- char *bankAccountNumber: pointer to the string with the bank account number
+* Returning values:
+*				- unsigned int: second control digit of the bank account	
+******************************************************************************/
+unsigned int calculateSecondDC(char* bankAccountNumber);
+
 
 //////////////////////////////////////////////////////////////////////////
 ///// -------------------------- MAIN ------------------------------ /////
@@ -45,13 +57,14 @@ int main( void ){
 	unsigned char option = 'e';
 	char string[20];
 	char substring[20];
+	char accNumber[10];
 	int ret;
 	
 	
 	//Ask the user for a choice
 	printf("Choose the option you want to test: \n");
 	printf("a - Find a substring in a string \n");
-	printf("b - fd not yet implemented \n");
+	printf("b - Find the second control digit of a bank account \n");
 	scanf("%c", &option);
 	
 	//Comprueba es una opcion valida del menu
@@ -70,11 +83,11 @@ int main( void ){
 		case 'a': 
 				printf("Introduce a string (max 20 characters): \n");
 				fflush(stdin);
-				fgets(string, 20, stdin);
+				fgets(string, 21, stdin);
 				strtok(string, "\n");
 				printf("Introduce a substring (max 20 characters): \n");
 				fflush(stdin);
-				fgets(substring, 20, stdin);
+				fgets(substring, 21, stdin);
 				strtok(substring, "\n");
 				ret = findSubString(string, substring);
 				
@@ -85,8 +98,13 @@ int main( void ){
 				
 		//calculate second dc
 		case 'b': 
-				printf("Not implemented yet\n");
+				printf("Introduce your bank accuont number (max 10 digits): \n");
+				fflush(stdin);
+				fgets(accNumber, 11, stdin);
+				strtok(accNumber, "\n");
+				ret = calculateSecondDC(accNumber);
 				
+				printf("The value of the second control digit is: %d", ret);
 				break;	
 				
 		
