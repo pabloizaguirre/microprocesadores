@@ -14,11 +14,15 @@ ORG 256
 start: jmp installer
 
 install_status_txt DB 10, " Installation driver status: ", 13, 10, '$'
-instructions_txt DB 10, " Developed by Pablo Izaguirre.", 10, 10, " Usage:", 10, 10, 9, "/I", 9, "Install the driver in case it is not previously installed.", 10, 10, 9, "/U", 9, "Uninstall the driver in case it is installed", 13, 10, '$'
-int_55h_txt DB "Instruction 55h: ", '$'
-int_57h_txt DB "Instruction 57h: ", '$'
+instructions_txt DB 10, 10, " Developed by Pablo Izaguirre.", 10, 10, " Usage:", 10, 10, 9, "/I", 9, "Install the driver in case it is not previously installed.", 10, 10, 9, "/U", 9, "Uninstall the driver in case it is installed", 13, 10, '$'
+int_55h_txt DB 10, 9, "Int 55h: ", '$'
+int_57h_txt DB 10, 9, "Int 57h: ", '$'
 not_installed_txt DB "Not installed", 13, 10, '$'
 installed_txt DB "Installed", 13, 10, '$'
+argument_error_txt DB "Incorrect arguments", 13, 10, '$'
+installing_txt DB "Interruptions 55h and 57h installed", 13, 10, '$'
+uninstalling_txt Db "Interruptions 55h and 57h uninstalled", 13, 10, '$'
+
 
 MODO_VIDEO db 0
 
@@ -27,22 +31,74 @@ isr PROC FAR
     ; Save modified registers
     ; Routine instructions
 
+    ; di has the size of the square
+    mov di, 10
+    ; dx has the x position
+    mov ch, 0
+    mov cl, al
+    ; dx has the y position
+    mov dh, 0
+    mov dl, ah
+
     ; We use 10h interrupción to enter in video mode
     MOV AH,0Fh ; Asking for video mode
     INT 10h ; Call to BIOS
     MOV MODO_VIDEO,AL ; We save the video mode and store it into AL
-
     mov ah, 00h ; We set the video mode
     mov al, 12h ; 640x480 16 color graphics (VGA)
     int 10h
+
+    MOV SI, CX
+    ADD SI, DI
+DRAW_SQUARE_IR_NORTH:
     ;Int10H draw pixel --> AH=0Ch 	AL = Colour, BH = PageNumber, CX = x, DX = y
     mov ah, 0Ch
     ; Read from the stack the value for the colour
-    mov al, 0Fh ; white colour 1111b
+    mov al, 1 ; blue
     mov bh, 00h ; page number (keep it always to zero)
-    mov cx,40 ; X position
-    mov dx,40 ; Y position
     int 10h
+    INC CX
+    CMP CX, SI
+    JNE DRAW_SQUARE_IR_NORTH
+
+    SUB SI, DI
+    ADD DX, DI
+DRAW_SQUARE_IR_SOUTH:
+    ;Int10H draw pixel --> AH=0Ch 	AL = Colour, BH = PageNumber, CX = x, DX = y
+    mov ah, 0Ch
+    ; Read from the stack the value for the colour
+    mov al, 1 ; blue
+    mov bh, 00h ; page number (keep it always to zero)
+    int 10h
+    DEC CX
+    CMP CX, SI
+    JNE DRAW_SQUARE_IR_SOUTH
+
+    MOV SI, DX
+    SUB SI, DI
+DRAW_SQUARE_IR_WEST:
+    ;Int10H draw pixel --> AH=0Ch 	AL = Colour, BH = PageNumber, CX = x, DX = y
+    mov ah, 0Ch
+    ; Read from the stack the value for the colour
+    mov al, 1 ; blue
+    mov bh, 00h ; page number (keep it always to zero)
+    int 10h
+    DEC DX
+    CMP DX, SI
+    JNE DRAW_SQUARE_IR_WEST
+
+    ADD CX, DI
+    ADD SI, DI
+DRAW_SQUARE_IR_EAST:
+    ;Int10H draw pixel --> AH=0Ch 	AL = Colour, BH = PageNumber, CX = x, DX = y
+    mov ah, 0Ch
+    ; Read from the stack the value for the colour
+    mov al, 1 ; blue
+    mov bh, 00h ; page number (keep it always to zero)
+    int 10h
+    INC DX
+    CMP DX, SI
+    JNE DRAW_SQUARE_IR_EAST
 
     ;Int15H active waiting in milliseconds: 1 millon us = 1 segundo
     MOV     CX, 2Dh ; CX:DX are the waiting time: 1 second = F:4240H --> 3 seconds 2D:C6C0h
@@ -53,56 +109,104 @@ isr PROC FAR
     mov ah, 00h ; Restore the input configuration to video mode
     mov al, MODO_VIDEO ; 
     int 10h
+
     
     ; Restore modified registers
     iret
 isr ENDP
 
 installer PROC
+    mov ah, 9           ; ah is set to 9 so we can print text using int 21h
+    ; check the parameters:
+    ; in ds:[80h] there is a byte that indicates the size of the parameters
+    cmp byte ptr ds:[80h], 0
+    je no_arguments
+    ; if the argument is /I we install the interruptions (it is compared to I/ because the system is little endian)
+    cmp word ptr ds:[82h], "I/"
+    je install
+    ; if the argument is /U we uninstall the interruptions (it is compared to I/ because the system is little endian)
+    cmp word ptr ds:[82h], "U/"
+    je uninstall
 
-    mov ah, 9                               ;FUNCTION THAT ALLOWS TO PRINT A STRING
-    MOV DX,OFFSET install_status_txt		;PRINTS THE INSTALLATION STATUS TEXT
-	INT 21H
+    ; if something different happens, we print an error
+    mov dx, OFFSET argument_error_txt
+    int 21h
+
+    jmp fin
+
+; the next part prints information about the program and its usage
+no_arguments:
+    mov dx,OFFSET install_status_txt		;PRINTS THE INSTALLATION STATUS TEXT
+	int 21h
     
-    mov cx, 0
+    ; print int 55h
+    mov cx, cs
     mov ds, cx
     mov dx, OFFSET int_55h_txt
-    ; int 21h
-    cmp word ptr ds:[55h*4+2], 0
-    je int_55h_installed
+    int 21h
+
+    ; First we check if the interruption 55h has been installed by checking if the interrupt vector is set to 0
+    mov cx, 0
+    mov es, cx
+    cmp word ptr es:[55h*4], 0
+    jne int_55h_installed
+    cmp word ptr es:[55h*4+2], 0
+    jne int_55h_installed
+    ; if we reach this point it means that the vector is 0
     mov dx, OFFSET not_installed_txt
-    ; int 21h
-    jmp fin_print_status
+    int 21h
+    jmp check_int_57h
 int_55h_installed:
     mov dx, OFFSET installed_txt
-    ; int 21h
+    int 21h
+    
+check_int_57h:
+    mov dx, OFFSET int_57h_txt
+    int 21h
+    ; now I check if the interruption 57h has been installed
+    cmp word ptr es:[57h*4], 0
+    jne int_57h_installed
+    cmp word ptr es:[57h*4+2], 0
+    jne int_57h_installed
+    ; if we reach this point it means that the vector is 0
+    mov dx, OFFSET not_installed_txt
+    int 21h
+    jmp fin_print_status
+int_57h_installed:
+    mov dx, OFFSET installed_txt
+    int 21h
+
 fin_print_status:
-				            
 	
     mov ah, 9
-    MOV DX,OFFSET instructions_txt  		;PRINTS THE TEXT WITH THE INSTRUCTIONS
+    MOV DX, OFFSET instructions_txt  		;PRINTS THE TEXT WITH THE INSTRUCTIONS
 	INT 21H
 
+fin:
+    ; we end the program
+    mov ax,4C00H			; FIN DE PROGRAMA Y VUELTA AL DOS
+ 	int 21h
 
-    
+uninstall:
+    mov bp, 55h
+    call uninstall_int
+    mov dx, OFFSET uninstalling_txt
+    int 21h
+    jmp fin
 
-
-    MOV AX,4C00H			; FIN DE PROGRAMA Y VUELTA AL DOS
- 	INT 21H
-
-
-
-
-    ; mov ax, 0
-    ; mov es, ax
-    ; mov ax, OFFSET isr
-    ; mov bx, cs
-    ; cli
-    ; mov es:[ 55h*4 ], ax
-    ; mov es:[ 55h*4+2 ], bx
-    ; sti
-    ; mov dx, OFFSET installer
-    ; int 27h ; Terminate and stay resident
+install:
+    mov dx, OFFSET installing_txt
+    int 21h
+    mov ax, 0
+    mov es, ax
+    mov ax, OFFSET isr
+    mov bx, cs
+    cli
+    mov es:[ 55h*4 ], ax
+    mov es:[ 55h*4+2 ], bx
+    sti
+    mov dx, OFFSET installer
+    int 27h ; Terminate and stay resident
 installer ENDP
 
 ; bp indica la instruccion que queremos desinstalar
