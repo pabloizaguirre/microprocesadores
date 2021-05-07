@@ -40,7 +40,7 @@ BEGIN PROC
 
     mov ah, 100
     mov al, 50
-    int 55h
+    int 57h
     
     ; BX REPRESENTS WHICH VECTOR WE ARE ANALYZING
     MOV BX, 0  

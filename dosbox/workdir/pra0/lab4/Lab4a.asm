@@ -28,7 +28,18 @@ MODO_VIDEO db 0
 
 ; Interrupt service routine
 isr PROC FAR
+blue:   
+    push bx
+    mov bl, 1
+    jmp start_isr
+
+red:
+    push bx
+    mov bl, 4
+
+start_isr:
     ; Save modified registers
+    push di cx ax dx si
     ; Routine instructions
 
     ; di has the size of the square
@@ -54,7 +65,7 @@ DRAW_SQUARE_IR_NORTH:
     ;Int10H draw pixel --> AH=0Ch 	AL = Colour, BH = PageNumber, CX = x, DX = y
     mov ah, 0Ch
     ; Read from the stack the value for the colour
-    mov al, 1 ; blue
+    mov al, bl ; 
     mov bh, 00h ; page number (keep it always to zero)
     int 10h
     INC CX
@@ -67,7 +78,7 @@ DRAW_SQUARE_IR_SOUTH:
     ;Int10H draw pixel --> AH=0Ch 	AL = Colour, BH = PageNumber, CX = x, DX = y
     mov ah, 0Ch
     ; Read from the stack the value for the colour
-    mov al, 1 ; blue
+    mov al, bl ; 
     mov bh, 00h ; page number (keep it always to zero)
     int 10h
     DEC CX
@@ -80,7 +91,7 @@ DRAW_SQUARE_IR_WEST:
     ;Int10H draw pixel --> AH=0Ch 	AL = Colour, BH = PageNumber, CX = x, DX = y
     mov ah, 0Ch
     ; Read from the stack the value for the colour
-    mov al, 1 ; blue
+    mov al, bl ; 
     mov bh, 00h ; page number (keep it always to zero)
     int 10h
     DEC DX
@@ -93,7 +104,7 @@ DRAW_SQUARE_IR_EAST:
     ;Int10H draw pixel --> AH=0Ch 	AL = Colour, BH = PageNumber, CX = x, DX = y
     mov ah, 0Ch
     ; Read from the stack the value for the colour
-    mov al, 1 ; blue
+    mov al, bl ; 
     mov bh, 00h ; page number (keep it always to zero)
     int 10h
     INC DX
@@ -110,8 +121,8 @@ DRAW_SQUARE_IR_EAST:
     mov al, MODO_VIDEO ; 
     int 10h
 
-    
     ; Restore modified registers
+    pop si dx ax cx di bx
     iret
 isr ENDP
 
@@ -121,12 +132,13 @@ installer PROC
     ; in ds:[80h] there is a byte that indicates the size of the parameters
     cmp byte ptr ds:[80h], 0
     je no_arguments
-    ; if the argument is /I we install the interruptions (it is compared to I/ because the system is little endian)
-    cmp word ptr ds:[82h], "I/"
-    je install
     ; if the argument is /U we uninstall the interruptions (it is compared to I/ because the system is little endian)
     cmp word ptr ds:[82h], "U/"
     je uninstall
+    ; if the argument is /I we install the interruptions (it is compared to I/ because the system is little endian)
+    cmp word ptr ds:[82h], "I/"
+    je install
+    
 
     ; if something different happens, we print an error
     mov dx, OFFSET argument_error_txt
@@ -177,18 +189,15 @@ int_57h_installed:
     int 21h
 
 fin_print_status:
-	
     mov ah, 9
     MOV DX, OFFSET instructions_txt  		;PRINTS THE TEXT WITH THE INSTRUCTIONS
 	INT 21H
-
-fin:
-    ; we end the program
-    mov ax,4C00H			; FIN DE PROGRAMA Y VUELTA AL DOS
- 	int 21h
+    jmp fin
 
 uninstall:
     mov bp, 55h
+    call uninstall_int
+    mov bp, 57h
     call uninstall_int
     mov dx, OFFSET uninstalling_txt
     int 21h
@@ -199,14 +208,24 @@ install:
     int 21h
     mov ax, 0
     mov es, ax
-    mov ax, OFFSET isr
+    mov ax, OFFSET blue
     mov bx, cs
     cli
     mov es:[ 55h*4 ], ax
     mov es:[ 55h*4+2 ], bx
     sti
+    mov ax, OFFSET red
+    cli
+    mov es:[ 57h*4 ], ax
+    mov es:[ 57h*4+2 ], bx
+    sti
     mov dx, OFFSET installer
     int 27h ; Terminate and stay resident
+
+fin:
+    ; we end the program
+    mov ax,4C00H			; FIN DE PROGRAMA Y VUELTA AL DOS
+ 	int 21h
 installer ENDP
 
 ; bp indica la instruccion que queremos desinstalar
@@ -214,7 +233,7 @@ uninstall_int PROC
     push ax bx cx ds es
     shl bp, 1
     shl bp, 1
-    add bp, 2   ; not bx is bx * 4 + 2
+    add bp, 2   ; now bp is bp * 4 + 2
     mov cx, 0
     mov ds, cx ; Segment of interrupt vectors
     mov es, ds:[ bp ] ; Read ISR segment
