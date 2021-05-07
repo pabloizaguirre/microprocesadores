@@ -51,13 +51,13 @@ start_isr:
     mov dh, 0
     mov dl, ah
 
-    ; We use 10h interrupción to enter in video mode
-    MOV AH,0Fh ; Asking for video mode
-    INT 10h ; Call to BIOS
-    MOV MODO_VIDEO,AL ; We save the video mode and store it into AL
-    mov ah, 00h ; We set the video mode
-    mov al, 12h ; 640x480 16 color graphics (VGA)
-    int 10h
+    ; ; We use 10h interrupción to enter in video mode
+    ; MOV AH,0Fh ; Asking for video mode
+    ; INT 10h ; Call to BIOS
+    ; MOV MODO_VIDEO,AL ; We save the video mode and store it into AL
+    ; mov ah, 00h ; We set the video mode
+    ; mov al, 12h ; 640x480 16 color graphics (VGA)
+    ; int 10h
 
     MOV SI, CX
     ADD SI, DI
@@ -111,15 +111,15 @@ DRAW_SQUARE_IR_EAST:
     CMP DX, SI
     JNE DRAW_SQUARE_IR_EAST
 
-    ;Int15H active waiting in milliseconds: 1 millon us = 1 segundo
-    MOV     CX, 2Dh ; CX:DX are the waiting time: 1 second = F:4240H --> 3 seconds 2D:C6C0h
-    MOV     DX, 0C6C0h
-    MOV     AH, 86H ;int15h with AH=86h to microseconds waiting in CX:DX
-    INT     15H
+    ; ;Int15H active waiting in milliseconds: 1 millon us = 1 segundo
+    ; MOV     CX, 2Dh ; CX:DX are the waiting time: 1 second = F:4240H --> 3 seconds 2D:C6C0h
+    ; MOV     DX, 0C6C0h
+    ; MOV     AH, 86H ;int15h with AH=86h to microseconds waiting in CX:DX
+    ; INT     15H
 
-    mov ah, 00h ; Restore the input configuration to video mode
-    mov al, MODO_VIDEO ; 
-    int 10h
+    ; mov ah, 00h ; Restore the input configuration to video mode
+    ; mov al, MODO_VIDEO ; 
+    ; int 10h
 
     ; Restore modified registers
     pop si dx ax cx di bx
