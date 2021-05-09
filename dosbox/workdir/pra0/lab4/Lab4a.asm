@@ -17,14 +17,39 @@ install_status_txt DB 10, " Installation driver status: ", 13, 10, '$'
 instructions_txt DB 10, 10, " Developed by Pablo Izaguirre.", 10, 10, " Usage:", 10, 10, 9, "/I", 9, "Install the driver in case it is not previously installed.", 10, 10, 9, "/U", 9, "Uninstall the driver in case it is installed", 13, 10, '$'
 int_55h_txt DB 10, 9, "Int 55h: ", '$'
 int_57h_txt DB 10, 9, "Int 57h: ", '$'
+int_1ch_txt DB 10, 9, "Int 1Ch: ", '$'
 not_installed_txt DB "Not installed", 13, 10, '$'
 installed_txt DB "Installed", 13, 10, '$'
 argument_error_txt DB "Incorrect arguments", 13, 10, '$'
-installing_txt DB "Interruptions 55h and 57h installed", 13, 10, '$'
-uninstalling_txt Db "Interruptions 55h and 57h uninstalled", 13, 10, '$'
+installing_txt DB "Interruptions 55h, 57h and 1Ch installed", 13, 10, '$'
+uninstalling_txt DB "Interruptions 55h, 57h and 1Ch uninstalled", 13, 10, '$'
 
 
 MODO_VIDEO db 0
+
+MSEC dw 0
+
+; Interrupt service routine for 1Ch
+isr_1ch PROC FAR
+    push bx ax
+    mov bx, MSEC
+    add bx, 55
+    cmp bx, 10000
+    jb continue_1ch
+    sub bx, 10000
+    mov ah, 2
+    mov dl, 43
+    int 21h
+    
+continue_1ch:
+    mov MSEC, bx
+    pop ax bx
+    jmp fin_isr
+isr_1ch ENDP
+
+isr_1ch_old PROC FAR
+    iret
+isr_1ch_old ENDP
 
 ; Interrupt service routine
 isr PROC FAR
@@ -123,6 +148,7 @@ DRAW_SQUARE_IR_EAST:
 
     ; Restore modified registers
     pop si dx ax cx di bx
+fin_isr:
     iret
 isr ENDP
 
@@ -137,7 +163,7 @@ installer PROC
     je uninstall
     ; if the argument is /I we install the interruptions (it is compared to I/ because the system is little endian)
     cmp word ptr ds:[82h], "I/"
-    je install
+    call install
     
 
     ; if something different happens, we print an error
@@ -145,6 +171,28 @@ installer PROC
     int 21h
 
     jmp fin
+
+uninstall:
+    mov bp, 55h
+    call uninstall_int
+    mov bp, 57h
+    call uninstall_int
+    ; To uninstall our program from int 1ch we have to install the previous program
+    mov bp, 1Ch
+    call uninstall_int
+    mov ax, 0
+    mov es, ax
+    mov bx, cs
+    mov ax, OFFSET isr_1ch_old
+    cli
+    mov es:[ 1Ch*4 ], ax
+    mov es:[ 1Ch*4+2 ], bx
+    sti
+    ; We print that the interruptions have been uninstalled
+    mov dx, OFFSET uninstalling_txt
+    int 21h
+    jmp fin
+
 
 ; the next part prints information about the program and its usage
 no_arguments:
@@ -183,27 +231,40 @@ check_int_57h:
     ; if we reach this point it means that the vector is 0
     mov dx, OFFSET not_installed_txt
     int 21h
-    jmp fin_print_status
+    jmp check_int_1ch
 int_57h_installed:
     mov dx, OFFSET installed_txt
+    int 21h
+
+check_int_1ch:
+    mov dx, OFFSET int_1ch_txt
+    int 21h
+    ; now I check if the interruption 1ch has been installed
+    cmp word ptr es:[1ch*4], OFFSET isr_1ch
+    jne int_1ch_not_installed
+    ; mov bx, cs
+    ; cmp word ptr es:[1ch*4+2], bx
+    ; jne int_1ch_not_installed
+    ; if we reach this point it means that it has been installed
+    mov dx, OFFSET installed_txt
+    int 21h
+    jmp fin_print_status
+int_1ch_not_installed:
+    mov dx, OFFSET not_installed_txt
     int 21h
 
 fin_print_status:
     mov ah, 9
     MOV DX, OFFSET instructions_txt  		;PRINTS THE TEXT WITH THE INSTRUCTIONS
 	INT 21H
-    jmp fin
 
-uninstall:
-    mov bp, 55h
-    call uninstall_int
-    mov bp, 57h
-    call uninstall_int
-    mov dx, OFFSET uninstalling_txt
-    int 21h
-    jmp fin
+fin:
+    ; we end the program
+    mov ax,4C00H			; FIN DE PROGRAMA Y VUELTA AL DOS
+ 	int 21h
+installer ENDP
 
-install:
+install PROC NEAR
     mov dx, OFFSET installing_txt
     int 21h
     mov ax, 0
@@ -219,14 +280,14 @@ install:
     mov es:[ 57h*4 ], ax
     mov es:[ 57h*4+2 ], bx
     sti
+    mov ax, OFFSET isr_1ch
+    cli
+    mov es:[ 1Ch*4 ], ax
+    mov es:[ 1Ch*4+2 ], bx
+    sti
     mov dx, OFFSET installer
     int 27h ; Terminate and stay resident
-
-fin:
-    ; we end the program
-    mov ax,4C00H			; FIN DE PROGRAMA Y VUELTA AL DOS
- 	int 21h
-installer ENDP
+install ENDP
 
 ; bp indica la instruccion que queremos desinstalar
 uninstall_int PROC
