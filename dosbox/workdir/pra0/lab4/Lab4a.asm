@@ -28,24 +28,94 @@ uninstalling_txt DB "Interruptions 55h, 57h and 1Ch uninstalled", 13, 10, '$'
 MODO_VIDEO db 0
 
 MSEC dw 0
+BLUE_POS_X db 0
+BLUE_POS_Y db 0
+RED_POS_X db 0
+RED_POS_Y db 0
 
-; Interrupt service routine for 1Ch
+; Interrupt service routine for 1Ch. al has the x position and ah the y position
 isr_1ch PROC FAR
     push bx ax
     mov bx, MSEC
     add bx, 55
-    cmp bx, 10000
+    cmp bx, 100
     jb continue_1ch
-    sub bx, 10000
-    mov ah, 2
-    mov dl, 43
-    int 21h
-    
+    sub bx, 100
+
+    mov ah, 1
+    int 16h
+    jz continue_1ch
+
+    mov ah, 0
+    int 16h         ; this interruption will store in al the ascii code for the pressed key
+
+    cmp al, "q"     ; if the pressed key is q
+    je end_program
+
+    call move_box
+    jmp continue_1ch
+
+end_program:
+    mov BLUE_POS_Y, 251     ; when we press q, we set ah to 250
+
 continue_1ch:
     mov MSEC, bx
     pop ax bx
     jmp fin_isr
 isr_1ch ENDP
+
+; the ascii for the key has to be stored in al, bx has the blue position and cx has the red position
+move_box proc NEAR
+    
+    cmp al, "a"
+    jne key_s
+    ; if the key is a
+    sub BLUE_POS_X, 10
+    ret
+key_s:
+    cmp al, "s"
+    jne key_d
+    ; if the key is s
+    add BLUE_POS_Y, 10
+    ret
+key_d:
+    cmp al, "d"
+    jne key_w
+    ; if key is d
+    add BLUE_POS_X, 10
+    ret
+key_w:
+    cmp al, "w"
+    jne key_j
+    ; if key is w
+    sub BLUE_POS_Y, 10
+    ret
+key_j:
+    cmp al, "j"
+    jne key_k
+    ; if the key is j
+    sub RED_POS_X, 10
+    ret
+key_k:
+    cmp al, "k"
+    jne key_l
+    ; if the key is k
+    add RED_POS_Y, 10
+    ret
+key_l:
+    cmp al, "l"
+    jne key_i
+    ; if key is l
+    add RED_POS_X, 10
+    ret
+key_i:
+    cmp al, "i"
+    jne fin_move_box
+    ; if key is i
+    sub RED_POS_Y, 10
+fin_move_box:
+    ret
+move_box endp
 
 isr_1ch_old PROC FAR
     iret

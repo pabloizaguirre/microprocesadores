@@ -23,7 +23,6 @@ EXTRA ENDS
 CODE SEGMENT
 ASSUME CS: CODE, DS: DATA, ES: EXTRA, SS: STACKSEG
 ; BEGINNING OF MAIN PROCEDURE
-texto db "Sa tocao una tecla", 13, 10, '$'
 MODO_VIDEO DB 0
 BEGIN PROC
     ; INITIALIZE THE SEGMENT REGISTER WITH ITS VALUE
@@ -43,7 +42,7 @@ BEGIN PROC
     INT 10h ; Call to BIOS
     MOV MODO_VIDEO,AL ; We save the video mode and store it into AL
     mov ah, 00h ; We set the video mode
-    mov al, 12h ; 640x480 16 color graphics (VGA)
+    mov al, 13h ; 320x200 VGA
     int 10h
 
     ; blue:
