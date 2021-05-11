@@ -8,8 +8,11 @@
 DATA SEGMENT
     limits_exceeded_blue_txt db " Blue exceeded the limits", 13, 10, '$'
     limits_exceeded_red_txt db " Red exceeded the limits", 13, 10, '$'
+    collided_red_txt db " Red has collided", 13, 10, '$'
+    collided_blue_txt db " Blue has collided", 13, 10, '$'
     blue_wins_txt db " Blue wins!!!", 13, 10, '$'
     red_wins_txt db " Red wins!!!", 13, 10, '$'
+    positions_occupied_matrix db 19 dup(25 dup(0))
 DATA ENDS
 ;**************************************************************************
 ; STACK SEGMENT DEFINITION
@@ -62,9 +65,15 @@ BEGIN PROC
     mov byte ptr es:[275h], 200
     mov byte ptr es:[276h], 100
 
+    mov bx, -1
+    mov dx, -1
 bucle:
     ; blue
     mov ax, es:[273h]
+    cmp ax, bx
+    ; bx has the last registered position of blue, if it has changed, we update the game
+    je bucle_red
+    mov bx, ax
     ; if ah is 251 it means that the key q was pressed
     cmp ah, 251
     je fin
@@ -73,28 +82,52 @@ bucle:
     ja limits_exceeded_blue
     cmp al, 240
     ja limits_exceeded_blue
+    mov cx, ax
+    call is_position_occupied
+    cmp cx, 0
+    jne collided_blue
     int 55h
 
+bucle_red:
     ; red
     mov ax, es:[275h]
+    cmp ax, dx
+    ; dx has the last registered position of red, if it has changed, we update the game
+    je bucle
+    mov dx, ax
+    ; now we check if the new position is correct, if not, red looses
     cmp ah, 180
     ja limits_exceeded_red
     cmp al, 240
     ja limits_exceeded_red
+    mov cx, ax
+    call is_position_occupied
+    cmp cx, 0
+    jne collided_red
     int 57h
     jmp bucle
 
 
+collided_blue:
+    mov dx, OFFSET collided_blue_txt
+    mov bx, OFFSET red_wins_txt 
+    jmp print_mistake
+
+collided_red:
+    mov dx, OFFSET collided_red_txt
+    mov bx, OFFSET blue_wins_txt
+    jmp print_mistake
+
 limits_exceeded_blue:
     mov dx, OFFSET limits_exceeded_blue_txt
     mov bx, OFFSET red_wins_txt
-    jmp print_limits_exceeded
+    jmp print_mistake
 
 limits_exceeded_red:
     mov dx, OFFSET limits_exceeded_red_txt
     mov bx, OFFSET blue_wins_txt
 
-print_limits_exceeded:
+print_mistake:
     mov ah, 00h ; Restore the input configuration to video mode
     mov al, MODO_VIDEO ; 
     int 10h
@@ -118,6 +151,39 @@ fin:
 BEGIN ENDP
 ; SPACE FOR SUBROUTINES
 
+; the position has to be stored in cx
+is_position_occupied proc NEAR
+    push ax bp
+    mov ax, 0
+    mov al, ch
+    ; we divide the y position by 10
+    mov ch, 10
+    div ch
+    ; now al has x_pos/10
+    mov ch, 25
+    mul ch
+    ; now ax has the row where the position is
+    mov bp, ax
+    ; now we have to find the column
+    mov ax, 0
+    mov al, cl
+    mov cl, 10
+    div cl
+    ; now al has y_pos/10
+    mov ah, 0
+    add bp, ax
+    
+    cmp positions_occupied_matrix[bp], 0
+    jne occupied
+    mov cx, 0
+    mov positions_occupied_matrix[bp], 1
+    pop bp ax
+    ret
+occupied: 
+    mov cx, 1
+    pop bp ax
+    ret
+is_position_occupied endp
 
 ; END OF THE CODE SEGMENT
 CODE ENDS

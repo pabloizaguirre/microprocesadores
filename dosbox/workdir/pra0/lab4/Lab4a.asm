@@ -32,31 +32,39 @@ BLUE_POS_X db 0
 BLUE_POS_Y db 0
 RED_POS_X db 0
 RED_POS_Y db 0
+LAST_KEY db 0       ; la tecla correspondiente al ascii code 0 se ignora
+LAST_KEY_BLUE db "d"    ; la serpiente azul comienza avanzando hacia la roja
+LAST_KEY_RED db "j"     ; la serpiente roja comienza avanzando hacia la azul
 
 ; Interrupt service routine for 1Ch. al has the x position and ah the y position
 isr_1ch PROC FAR
     push bx ax
-    mov bx, MSEC
-    add bx, 55
-    cmp bx, 100
-    jb continue_1ch
-    sub bx, 100
 
     mov ah, 1
     int 16h
-    jz continue_1ch
-
+    jz key_not_pressed
+    ; si se ha presionado una tecla se actualiza la variable LAST_KEY
     mov ah, 0
     int 16h         ; this interruption will store in al the ascii code for the pressed key
+    mov LAST_KEY, al
 
+key_not_pressed:
+    mov bx, MSEC
+    add bx, 55
+    cmp bx, 100
+    ; if 1000 ms have passed, we execute the program
+    jb continue_1ch
+    sub bx, 100
+
+    mov al, LAST_KEY
     cmp al, "q"     ; if the pressed key is q
     je end_program
 
-    call move_box
+    call move_box_blue
     jmp continue_1ch
 
 end_program:
-    mov BLUE_POS_Y, 251     ; when we press q, we set ah to 250
+    mov BLUE_POS_Y, 251     ; when we press q, we set ah to 251
 
 continue_1ch:
     mov MSEC, bx
@@ -65,7 +73,7 @@ continue_1ch:
 isr_1ch ENDP
 
 ; the ascii for the key has to be stored in al, bx has the blue position and cx has the red position
-move_box proc NEAR
+move_box_blue proc NEAR
     
     cmp al, "a"
     jne key_s
@@ -115,7 +123,7 @@ key_i:
     sub RED_POS_Y, 10
 fin_move_box:
     ret
-move_box endp
+move_box_blue endp
 
 isr_1ch_old PROC FAR
     iret
