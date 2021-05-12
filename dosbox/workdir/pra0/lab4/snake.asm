@@ -65,6 +65,10 @@ BEGIN PROC
     mov byte ptr es:[275h], 200
     mov byte ptr es:[276h], 100
 
+    ; we set the initial direction for the snakes (moving towards each other)
+    mov byte ptr es:[278h], "d"
+    mov byte ptr es:[279h], "j"
+
     mov bx, -1
     mov dx, -1
 bucle:

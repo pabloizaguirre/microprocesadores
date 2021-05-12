@@ -36,7 +36,7 @@ LAST_KEY db 0       ; la tecla correspondiente al ascii code 0 se ignora
 LAST_KEY_BLUE db "d"    ; la serpiente azul comienza avanzando hacia la roja
 LAST_KEY_RED db "j"     ; la serpiente roja comienza avanzando hacia la azul
 
-; Interrupt service routine for 1Ch. al has the x position and ah the y position
+; Interrupt service routine for 1Ch.
 isr_1ch PROC FAR
     push bx ax
 
@@ -47,20 +47,25 @@ isr_1ch PROC FAR
     mov ah, 0
     int 16h         ; this interruption will store in al the ascii code for the pressed key
     mov LAST_KEY, al
+    call update_last_keys
 
 key_not_pressed:
     mov bx, MSEC
     add bx, 55
-    cmp bx, 100
+    cmp bx, 1000
     ; if 1000 ms have passed, we execute the program
     jb continue_1ch
-    sub bx, 100
+    sub bx, 1000
 
     mov al, LAST_KEY
     cmp al, "q"     ; if the pressed key is q
     je end_program
 
+    mov al, LAST_KEY_BLUE
     call move_box_blue
+
+    mov al, LAST_KEY_RED
+    call move_box_red
     jmp continue_1ch
 
 end_program:
@@ -72,9 +77,40 @@ continue_1ch:
     jmp fin_isr
 isr_1ch ENDP
 
-; the ascii for the key has to be stored in al, bx has the blue position and cx has the red position
+; the ascii code for the key has to be stored in al. This routine updates the last pressed key for each snake
+update_last_keys proc NEAR
+    ; first we check if a blue key has been pressed
+    cmp al, "a"
+    je blue_key_pressed
+    cmp al, "s"
+    je blue_key_pressed
+    cmp al, "d"
+    je blue_key_pressed
+    cmp al, "w"
+    je blue_key_pressed
+    jmp check_pressed_red
+
+blue_key_pressed:
+    mov LAST_KEY_BLUE, al
+    ret
+
+check_pressed_red:
+    cmp al, "j"
+    je red_key_pressed
+    cmp al, "k"
+    je red_key_pressed
+    cmp al, "l"
+    je red_key_pressed
+    cmp al, "i"
+    je red_key_pressed
+    ret
+red_key_pressed:
+    mov LAST_KEY_RED, al
+    ret
+update_last_keys endp
+
+; the ascii for the key has to be stored in al. This routine checks what key has been pressed and updates the blue position
 move_box_blue proc NEAR
-    
     cmp al, "a"
     jne key_s
     ; if the key is a
@@ -94,11 +130,15 @@ key_d:
     ret
 key_w:
     cmp al, "w"
-    jne key_j
+    jne fin_move_box_blue
     ; if key is w
     sub BLUE_POS_Y, 10
+fin_move_box_blue:
     ret
-key_j:
+move_box_blue endp
+
+; the ascii for the key has to be stored in al. This routine checks what key has been pressed and updates the red position
+move_box_red proc NEAR
     cmp al, "j"
     jne key_k
     ; if the key is j
@@ -118,12 +158,12 @@ key_l:
     ret
 key_i:
     cmp al, "i"
-    jne fin_move_box
+    jne fin_move_box_red
     ; if key is i
     sub RED_POS_Y, 10
-fin_move_box:
+fin_move_box_red:
     ret
-move_box_blue endp
+move_box_red endp
 
 isr_1ch_old PROC FAR
     iret
