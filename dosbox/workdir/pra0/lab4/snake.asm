@@ -69,6 +69,10 @@ BEGIN PROC
     mov byte ptr es:[278h], "d"
     mov byte ptr es:[279h], "j"
 
+    ; we set the initial counter and update_time to 0 and 1000
+    mov word ptr es:[27Ah], 1000
+    mov byte ptr es:[27Ch], 0
+
     mov bx, -1
     mov dx, -1
 bucle:

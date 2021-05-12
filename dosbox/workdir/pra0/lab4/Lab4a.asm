@@ -35,10 +35,12 @@ RED_POS_Y db 0
 LAST_KEY db 0       ; la tecla correspondiente al ascii code 0 se ignora
 LAST_KEY_BLUE db "d"    ; la serpiente azul comienza avanzando hacia la roja
 LAST_KEY_RED db "j"     ; la serpiente roja comienza avanzando hacia la azul
+UPDATE_TIME dw 1000
+COUNT db 0
 
 ; Interrupt service routine for 1Ch.
 isr_1ch PROC FAR
-    push bx ax
+    push bx ax cx dx
 
     mov ah, 1
     int 16h
@@ -52,11 +54,23 @@ isr_1ch PROC FAR
 key_not_pressed:
     mov bx, MSEC
     add bx, 55
-    cmp bx, 1000
-    ; if 1000 ms have passed, we execute the program
+    cmp bx, UPDATE_TIME
+    ; if UPDATE_TIME ms have passed, we execute the program
     jb continue_1ch
-    sub bx, 1000
+    sub bx, UPDATE_TIME
+    inc COUNT
+    cmp COUNT, 15
+    jb no_speedup
+    push ax 
+    mov ax, UPDATE_TIME
+    xor dx, dx
+    mov cx, 10
+    div cx
+    sub UPDATE_TIME, ax
+    pop ax
+    mov COUNT, 0
 
+no_speedup:
     mov al, LAST_KEY
     cmp al, "q"     ; if the pressed key is q
     je end_program
@@ -73,7 +87,7 @@ end_program:
 
 continue_1ch:
     mov MSEC, bx
-    pop ax bx
+    pop dx cx ax bx
     jmp fin_isr
 isr_1ch ENDP
 
