@@ -2,7 +2,7 @@
 ; MBS 2021. LABORATORY ASSIGNMENT 4a
 ; Author: Pablo Izaguirre garcia
 ; Group: 1301
-; Task: 4a
+; Task: 1 and 3
 ;**************************************************************************
 
 ; CODE SEGMENT DEFINITION
@@ -32,9 +32,9 @@ BLUE_POS_X db 0
 BLUE_POS_Y db 0
 RED_POS_X db 0
 RED_POS_Y db 0
-LAST_KEY db 0       ; la tecla correspondiente al ascii code 0 se ignora
-LAST_KEY_BLUE db "d"    ; la serpiente azul comienza avanzando hacia la roja
-LAST_KEY_RED db "j"     ; la serpiente roja comienza avanzando hacia la azul
+LAST_KEY db 0       ; the key corresponding to ascii code 0 is ignored
+LAST_KEY_BLUE db "d"    ; the blue snake moves towards the red one
+LAST_KEY_RED db "j"     ; the red snake moves towards the blue one
 UPDATE_TIME dw 1000
 COUNT db 0
 
@@ -45,7 +45,7 @@ isr_1ch PROC FAR
     mov ah, 1
     int 16h
     jz key_not_pressed
-    ; si se ha presionado una tecla se actualiza la variable LAST_KEY
+    ; if a key was pressed, LAST_KEY is updated
     mov ah, 0
     int 16h         ; this interruption will store in al the ascii code for the pressed key
     mov LAST_KEY, al
@@ -61,6 +61,7 @@ key_not_pressed:
     inc COUNT
     cmp COUNT, 15
     jb no_speedup
+    ; when 15 seconds have passed we increase the speed by 10% by reducing UPDATE_TIME by 10%
     push ax 
     mov ax, UPDATE_TIME
     xor dx, dx
@@ -117,6 +118,7 @@ check_pressed_red:
     je red_key_pressed
     cmp al, "i"
     je red_key_pressed
+    ; if no movement key was pressed, this program does nothing
     ret
 red_key_pressed:
     mov LAST_KEY_RED, al
@@ -309,6 +311,7 @@ uninstall:
     call uninstall_int
     mov bp, 57h
     call uninstall_int
+    ; *** COMMENT THIS SECTION FOR TASK 1 ***
     ; To uninstall our program from int 1ch we have to install the previous program
     mov bp, 1Ch
     call uninstall_int
@@ -320,6 +323,7 @@ uninstall:
     mov es:[ 1Ch*4 ], ax
     mov es:[ 1Ch*4+2 ], bx
     sti
+    ; *** UP TO HERE ***
     ; We print that the interruptions have been uninstalled
     mov dx, OFFSET uninstalling_txt
     int 21h
@@ -369,6 +373,7 @@ int_57h_installed:
     int 21h
 
 check_int_1ch:
+    ; *** COMMENT THIS SECTION FOR TASK 1 ***
     mov dx, OFFSET int_1ch_txt
     int 21h
     ; now I check if the interruption 1ch has been installed
@@ -384,6 +389,7 @@ check_int_1ch:
 int_1ch_not_installed:
     mov dx, OFFSET not_installed_txt
     int 21h
+    ; *** UP TO HERE ***
 
 fin_print_status:
     mov ah, 9
@@ -404,7 +410,7 @@ install PROC NEAR
     mov ax, OFFSET blue
     mov bx, cs
     cli
-    mov es:[ 55h*4 ], ax
+    mov es:[ 55h*4 ], ax        ; store the position in the initialization vector
     mov es:[ 55h*4+2 ], bx
     sti
     mov ax, OFFSET red
@@ -412,11 +418,13 @@ install PROC NEAR
     mov es:[ 57h*4 ], ax
     mov es:[ 57h*4+2 ], bx
     sti
+    ; *** COMMENT THIS SECTION FOR TASK 1 ***
     mov ax, OFFSET isr_1ch
     cli
     mov es:[ 1Ch*4 ], ax
     mov es:[ 1Ch*4+2 ], bx
     sti
+    ; *** UP TO HERE ***
     mov dx, OFFSET installer
     int 27h ; Terminate and stay resident
 install ENDP

@@ -2,7 +2,7 @@
 ; MBS 2021. LABORATORY ASSIGNMENT 4
 ; Author: Pablo Izaguirre garcia
 ; Group: 1301
-; Task: 4b
+; Task: 2
 ;**************************************************************************
 ; DATA SEGMENT DEFINITION
 DATA SEGMENT

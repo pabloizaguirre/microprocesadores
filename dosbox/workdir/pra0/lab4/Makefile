@@ -1,4 +1,4 @@
-all: clean Lab4a.com Lab4.exe lab4b.com Snake.com
+all: clean Lab4a.com lab4b.com Snake.com
 
 Lab4a.com: Lab4a.obj
 	tlink /v /t Lab4a
@@ -15,11 +15,6 @@ Snake.com: Snake.obj
 Snake.obj: Snake.asm
 	tasm /zi Snake.asm ,, Snake.lst
 
-Lab4.exe: Lab4.obj
-	tlink /v Lab4
-Lab4.obj: Lab4.asm
-	tasm /zi Lab4.asm ,, Lab4.lst
-
 clean:
 	del Lab4a.obj
 	del Lab4a.com
@@ -33,7 +28,3 @@ clean:
 	del Snake.exe
 	del Snake.map
 	del Snake.lst
-	del Lab4.obj
-	del Lab4.exe
-	del Lab4.map
-	del Lab4.lst

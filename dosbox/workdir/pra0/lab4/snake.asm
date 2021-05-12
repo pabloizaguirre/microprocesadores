@@ -152,7 +152,7 @@ print_winner:
 fin:
     ; END OF THE PROGRAMME
     mov ah, 00h ; Restore the input configuration to video mode
-    mov al, MODO_VIDEO ; 
+    mov al, MODO_VIDEO 
     int 10h
     mov ax, 4C00H
     int 21H
